@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Markdown from "react-markdown";
 import {
   LightbulbIcon,
   ArrowUpIcon,
@@ -254,7 +253,6 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
   );
 });
 
-// Extracted CreateIdeaBox component to prevent re-renders of the entire page
 function CreateIdeaBox({
   onCreateIdea,
   userName,
@@ -262,99 +260,60 @@ function CreateIdeaBox({
   onCreateIdea: (idea: Idea) => void;
   userName: string;
 }) {
-  const [newIdea, setNewIdea] = useState("");
-  const [ideaBody, setIdeaBody] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [newTags, setNewTags] = useState<string[]>([]);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  const MAX_BODY_LENGTH = 500;
-
-  // Use refs to avoid re-adding event listeners on every state change
-  const stateRef = useRef({ newIdea, ideaBody, newTags });
-
-  useEffect(() => {
-    stateRef.current = { newIdea, ideaBody, newTags };
-  });
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const { newIdea, ideaBody, newTags } = stateRef.current;
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node) &&
-        !newIdea.trim() &&
-        !ideaBody.trim() &&
-        newTags.length === 0
-      ) {
-        setIsExpanded(false);
-        setShowPreview(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []); // Empty deps - listener added once
-
-  const addTag = () => {
-    const trimmed = tagInput.trim();
-    if (trimmed && !newTags.includes(trimmed)) {
-      setNewTags((prev) => [...prev, trimmed]);
-      setTagInput("");
-    }
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setNewTags((prev) => prev.filter((tag) => tag !== tagToRemove));
-  };
-
-  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === " " || e.key === "Enter") {
-      e.preventDefault();
-      addTag();
-    }
-    if (e.key === "Backspace" && tagInput === "" && newTags.length > 0) {
-      setNewTags((prev) => prev.slice(0, -1));
-    }
-  };
+  const MAX_LENGTH = 500;
+  const showExtras = title.trim() || tags.length > 0;
 
   const handleSubmit = () => {
-    if (!newIdea.trim()) return;
+    if (!title.trim()) return;
 
-    const idea: Idea = {
+    onCreateIdea({
       id: Date.now().toString(),
-      title: newIdea,
-      description:
-        ideaBody.trim() ||
-        "Nova ideia da comunidade. Clique para adicionar mais detalhes.",
+      title: title.trim(),
+      description: body.trim() || "Nova ideia da comunidade.",
       votes: 1,
       userVote: "up",
       author: userName,
       authorAvatar: "✨",
-      tags: newTags.length > 0 ? newTags : ["Novo"],
+      tags: tags.length > 0 ? tags : ["Novo"],
       timeAgo: "agora",
       comments: 0,
-    };
+    });
 
-    onCreateIdea(idea);
-    setNewIdea("");
-    setIdeaBody("");
-    setNewTags([]);
+    setTitle("");
+    setBody("");
+    setTags([]);
     setTagInput("");
-    setIsExpanded(false);
-    setShowPreview(false);
+  };
+
+  const addTag = () => {
+    const tag = tagInput.trim();
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tag: string) => {
+    setTags(tags.filter((t) => t !== tag));
+  };
+
+  const handleTagKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      addTag();
+    }
+    if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+      setTags(tags.slice(0, -1));
+    }
   };
 
   return (
-    <div
-      ref={containerRef}
-      onClick={() => !isExpanded && setIsExpanded(true)}
-      className={`neo-border neo-shadow-lg bg-white p-6 mb-6 animate-fade-in-up stagger-1 ${
-        isExpanded ? "" : "cursor-pointer"
-      }`}
-    >
+    <div className="neo-border neo-shadow-lg bg-white p-6 mb-6 animate-fade-in-up stagger-1">
       <div className="flex items-start gap-4">
         <div className="neo-border bg-[var(--lime)] p-3 hidden sm:block">
           <LightbulbIcon className="w-6 h-6" />
@@ -362,74 +321,37 @@ function CreateIdeaBox({
         <div className="flex-1">
           <Input
             type="text"
-            value={newIdea}
-            onChange={(e) => setNewIdea(e.target.value)}
-            onFocus={() => setIsExpanded(true)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             placeholder="Ex: App that turns memes into NFTs..."
             variant="accent"
             size="lg"
             className="w-full mb-4"
           />
 
-          {/* Expanded content */}
-          {isExpanded && (
-            <div>
-              {/* Textarea / Preview toggle */}
-              <div className="flex gap-2 mb-2">
-                <button
-                  onClick={() => setShowPreview(false)}
-                  className={`neo-border px-3 py-1 text-sm font-body transition-colors ${
-                    !showPreview
-                      ? "bg-[var(--lime)]"
-                      : "bg-[var(--cream)] hover:bg-white"
-                  }`}
-                >
-                  Escrever
-                </button>
-                <button
-                  onClick={() => setShowPreview(true)}
-                  className={`neo-border px-3 py-1 text-sm font-body transition-colors ${
-                    showPreview
-                      ? "bg-[var(--lime)]"
-                      : "bg-[var(--cream)] hover:bg-white"
-                  }`}
-                >
-                  Preview
-                </button>
-                <span className="ml-auto text-sm font-body text-[var(--deep-black)]/50">
-                  {ideaBody.length}/{MAX_BODY_LENGTH}
+          {showExtras && (
+            <>
+              <div className="flex justify-end mb-2">
+                <span className="text-sm font-body text-[var(--deep-black)]/50">
+                  {body.length}/{MAX_LENGTH}
                 </span>
               </div>
-
-              {/* Textarea or Markdown Preview */}
-              {showPreview ? (
-                <div className="neo-border bg-[var(--cream)] p-4 min-h-[120px] mb-4 prose prose-sm max-w-none font-body">
-                  {ideaBody ? (
-                    <Markdown>{ideaBody}</Markdown>
-                  ) : (
-                    <span className="text-[var(--deep-black)]/40 italic">
-                      Nada para visualizar ainda...
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <textarea
-                  value={ideaBody}
-                  onChange={(e) => {
-                    if (e.target.value.length <= MAX_BODY_LENGTH) {
-                      setIdeaBody(e.target.value);
-                    }
-                  }}
-                  placeholder="Descreva sua ideia em detalhes... (suporta **markdown**)"
-                  className="neo-border bg-[var(--cream)] p-4 w-full min-h-[120px] mb-4 font-body text-sm resize-none focus:outline-none focus:bg-white transition-colors"
-                />
-              )}
-            </div>
+              <textarea
+                value={body}
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_LENGTH) {
+                    setBody(e.target.value);
+                  }
+                }}
+                placeholder="Descreva sua ideia em detalhes..."
+                className="neo-border bg-[var(--cream)] p-4 w-full min-h-[120px] mb-4 font-body text-sm resize-none focus:outline-none focus:bg-white"
+              />
+            </>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <div className="flex gap-2 flex-wrap items-center">
-              {newTags.map((tag) => (
+              {tags.map((tag) => (
                 <span
                   key={tag}
                   className="neo-border bg-[var(--lime)] px-3 py-1 text-sm font-body flex items-center gap-1"
@@ -437,24 +359,25 @@ function CreateIdeaBox({
                   {tag}
                   <button
                     onClick={() => removeTag(tag)}
-                    className="ml-1 hover:text-[var(--hot-pink)] transition-colors"
+                    className="ml-1 hover:text-[var(--hot-pink)]"
                   >
                     ×
                   </button>
                 </span>
               ))}
-              <div className="flex items-center gap-1">
-                <input
+              <div className="flex items-center gap-2">
+                <Input
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagInputKeyDown}
+                  onKeyDown={handleTagKey}
                   placeholder="+ tag"
-                  className="neo-border bg-[var(--cream)] px-3 py-1 text-sm font-body w-24 focus:outline-none focus:bg-white transition-colors"
+                  size="sm"
+                  className="w-24"
                 />
                 <button
                   onClick={addTag}
-                  className="neo-border bg-[var(--cream)] px-2 py-1 text-sm font-body hover:bg-[var(--lime)] transition-colors"
+                  className="neo-border bg-[var(--cream)] px-2 py-1 text-sm font-body hover:bg-[var(--lime)]"
                 >
                   +
                 </button>

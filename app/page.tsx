@@ -180,21 +180,21 @@ export default function Home() {
               title="POST YOUR IDEAS"
               description="Share app ideas you won't build. Help others find inspiration."
               color="bg-[var(--sunny-yellow)]"
-              image="/duck-images/thinking.jpg"
+              image="/racoon-images/thinking.jpg"
             />
             <StepCard
               number="2"
               title="COLLECT UPVOTES"
               description="Community votes on the best ideas. Quality rises to the top."
               color="bg-[var(--lime)]"
-              image="/duck-images/writing.jpg"
+              image="/racoon-images/writing.jpg"
             />
             <StepCard
               number="3"
               title="CONVERT TO ADS"
               description="Use your upvotes as credits to advertise your own SaaS."
               color="bg-[var(--sky-blue)]"
-              image="/duck-images/celebrating.jpg"
+              image="/racoon-images/celebrating.jpg"
             />
           </div>
         </div>
