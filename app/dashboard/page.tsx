@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, memo, useCallback } from "react";
+import Markdown from "react-markdown";
 import {
   LightbulbIcon,
   ArrowUpIcon,
@@ -105,7 +106,7 @@ const MOCK_IDEAS: Idea[] = [
   },
 ];
 
-function IdeaFeedCard({
+const IdeaFeedCard = memo(function IdeaFeedCard({
   idea,
   onVote,
   index,
@@ -249,15 +250,233 @@ function IdeaFeedCard({
       </div>
     </div>
   );
+});
+
+// Extracted CreateIdeaBox component to prevent re-renders of the entire page
+function CreateIdeaBox({
+  onCreateIdea,
+}: {
+  onCreateIdea: (idea: Idea) => void;
+}) {
+  const [newIdea, setNewIdea] = useState("");
+  const [ideaBody, setIdeaBody] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [newTags, setNewTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const userName = "Creator";
+
+  const MAX_BODY_LENGTH = 500;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node) &&
+        !newIdea.trim() &&
+        !ideaBody.trim() &&
+        newTags.length === 0
+      ) {
+        setIsExpanded(false);
+        setShowPreview(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [newIdea, ideaBody, newTags]);
+
+  const addTag = () => {
+    const trimmed = tagInput.trim();
+    if (trimmed && !newTags.includes(trimmed)) {
+      setNewTags((prev) => [...prev, trimmed]);
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setNewTags((prev) => prev.filter((tag) => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      addTag();
+    }
+    if (e.key === "Backspace" && tagInput === "" && newTags.length > 0) {
+      setNewTags((prev) => prev.slice(0, -1));
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!newIdea.trim()) return;
+
+    const idea: Idea = {
+      id: Date.now().toString(),
+      title: newIdea,
+      description:
+        ideaBody.trim() ||
+        "Nova ideia da comunidade. Clique para adicionar mais detalhes.",
+      votes: 1,
+      userVote: "up",
+      author: userName,
+      authorAvatar: "✨",
+      tags: newTags.length > 0 ? newTags : ["Novo"],
+      timeAgo: "agora",
+      comments: 0,
+    };
+
+    onCreateIdea(idea);
+    setNewIdea("");
+    setIdeaBody("");
+    setNewTags([]);
+    setTagInput("");
+    setIsExpanded(false);
+    setShowPreview(false);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onClick={() => !isExpanded && setIsExpanded(true)}
+      className={`neo-border neo-shadow-lg bg-white p-6 mb-6 transition-shadow duration-200 animate-fade-in-up stagger-1 ${
+        isExpanded
+          ? "shadow-[12px_12px_0_var(--deep-black)]"
+          : "cursor-pointer hover:shadow-[8px_8px_0_var(--deep-black)]"
+      }`}
+    >
+      <div className="flex items-start gap-4">
+        <div className="neo-border bg-[var(--lime)] p-3 hidden sm:block">
+          <LightbulbIcon className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <Input
+            type="text"
+            value={newIdea}
+            onChange={(e) => setNewIdea(e.target.value)}
+            onFocus={() => setIsExpanded(true)}
+            placeholder="Ex: App that turns memes into NFTs..."
+            variant="accent"
+            size="lg"
+            className="w-full mb-4"
+          />
+
+          {/* Expanded content */}
+          {isExpanded && (
+            <div>
+              {/* Textarea / Preview toggle */}
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className={`neo-border px-3 py-1 text-sm font-body transition-colors ${
+                    !showPreview
+                      ? "bg-[var(--lime)]"
+                      : "bg-[var(--cream)] hover:bg-white"
+                  }`}
+                >
+                  Escrever
+                </button>
+                <button
+                  onClick={() => setShowPreview(true)}
+                  className={`neo-border px-3 py-1 text-sm font-body transition-colors ${
+                    showPreview
+                      ? "bg-[var(--lime)]"
+                      : "bg-[var(--cream)] hover:bg-white"
+                  }`}
+                >
+                  Preview
+                </button>
+                <span className="ml-auto text-sm font-body text-[var(--deep-black)]/50">
+                  {ideaBody.length}/{MAX_BODY_LENGTH}
+                </span>
+              </div>
+
+              {/* Textarea or Markdown Preview */}
+              {showPreview ? (
+                <div className="neo-border bg-[var(--cream)] p-4 min-h-[120px] mb-4 prose prose-sm max-w-none font-body">
+                  {ideaBody ? (
+                    <Markdown>{ideaBody}</Markdown>
+                  ) : (
+                    <span className="text-[var(--deep-black)]/40 italic">
+                      Nada para visualizar ainda...
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <textarea
+                  value={ideaBody}
+                  onChange={(e) => {
+                    if (e.target.value.length <= MAX_BODY_LENGTH) {
+                      setIdeaBody(e.target.value);
+                    }
+                  }}
+                  placeholder="Descreva sua ideia em detalhes... (suporta **markdown**)"
+                  className="neo-border bg-[var(--cream)] p-4 w-full min-h-[120px] mb-4 font-body text-sm resize-none focus:outline-none focus:bg-white transition-colors"
+                />
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div className="flex gap-2 flex-wrap items-center">
+              {newTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="neo-border bg-[var(--lime)] px-3 py-1 text-sm font-body flex items-center gap-1"
+                >
+                  {tag}
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="ml-1 hover:text-[var(--hot-pink)] transition-colors"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="+ tag"
+                  className="neo-border bg-[var(--cream)] px-3 py-1 text-sm font-body w-24 focus:outline-none focus:bg-white transition-colors"
+                />
+                <button
+                  onClick={addTag}
+                  className="neo-border bg-[var(--cream)] px-2 py-1 text-sm font-body hover:bg-[var(--lime)] transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleSubmit}
+              className="neo-border-thick whitespace-nowrap"
+            >
+              <span className="flex items-center gap-2">
+                <SparkleIcon className="w-5 h-5" />
+                CRIAR IDEIA
+              </span>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AppHome() {
-  const [newIdea, setNewIdea] = useState("");
   const [ideas, setIdeas] = useState<Idea[]>(MOCK_IDEAS);
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const userName = "Creator";
 
-  const handleVote = (id: string, vote: "up" | "down") => {
+  const handleAddIdea = useCallback((idea: Idea) => {
+    setIdeas((prev) => [idea, ...prev]);
+  }, []);
+
+  const handleVote = useCallback((id: string, vote: "up" | "down") => {
     setIdeas((prev) =>
       prev.map((idea) => {
         if (idea.id !== id) return idea;
@@ -277,28 +496,7 @@ export default function AppHome() {
         return { ...idea, votes: newVotes, userVote: newUserVote };
       })
     );
-  };
-
-  const handleCreateIdea = () => {
-    if (!newIdea.trim()) return;
-
-    const idea: Idea = {
-      id: Date.now().toString(),
-      title: newIdea,
-      description:
-        "Nova ideia da comunidade. Clique para adicionar mais detalhes.",
-      votes: 1,
-      userVote: "up",
-      author: userName,
-      authorAvatar: "✨",
-      tags: ["Novo"],
-      timeAgo: "agora",
-      comments: 0,
-    };
-
-    setIdeas((prev) => [idea, ...prev]);
-    setNewIdea("");
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[var(--cream)] bg-grid relative noise-overlay">
@@ -336,15 +534,15 @@ export default function AppHome() {
 
       {/* Main Content with Sidebar Ads */}
       <div className="relative">
-        {/* Sidebar Ads - Desktop only, positioned next to container */}
-        <div className="hidden xl:block absolute left-[calc(50%-32rem-220px)] top-24 z-40">
+        {/* Sidebar Ads - Desktop only, positioned next to container, aligned with input box */}
+        <div className="hidden xl:block absolute left-[calc(50%-32rem-220px)] top-36 z-40">
           <div className="neo-border neo-shadow bg-[var(--cream)] w-72 h-72 flex items-center justify-center sticky top-24">
             <span className="font-display text-3xl text-[var(--deep-black)]/40">
               AD
             </span>
           </div>
         </div>
-        <div className="hidden xl:block absolute right-[calc(50%-32rem-220px)] top-24 z-40">
+        <div className="hidden xl:block absolute right-[calc(50%-32rem-220px)] top-36 z-40">
           <div className="neo-border neo-shadow bg-[var(--cream)] w-72 h-72 flex items-center justify-center sticky top-24">
             <span className="font-display text-3xl text-[var(--deep-black)]/40">
               AD
@@ -357,68 +555,16 @@ export default function AppHome() {
           <div className="mb-8 animate-fade-in-up">
             <div className="flex items-center gap-3 mb-2">
               <h1 className="font-display text-4xl md:text-5xl">
-                Hi, <span className="text-[var(--hot-pink)]">{userName}</span>
+                Hi, <span className="text-[var(--hot-pink)]">Creator</span>
               </h1>
-              <div className="animate-wiggle">
-                <span className="text-4xl">👋</span>
-              </div>
             </div>
             <p className="font-body text-lg text-[var(--deep-black)]/70">
               What are we thinking of today?
             </p>
           </div>
 
-          {/* Create Idea Section */}
-          <div
-            className={`neo-border neo-shadow-lg bg-white p-6 mb-6 transition-all duration-300 animate-fade-in-up stagger-1 ${
-              isInputFocused
-                ? "translate-y-[-4px] shadow-[12px_12px_0_var(--deep-black)]"
-                : ""
-            }`}
-          >
-            <div className="flex items-start gap-4">
-              <div className="neo-border bg-[var(--lime)] p-3 animate-bounce-subtle hidden sm:block">
-                <LightbulbIcon className="w-6 h-6" />
-              </div>
-              <div className="flex-1">
-                <Input
-                  type="text"
-                  value={newIdea}
-                  onChange={(e) => setNewIdea(e.target.value)}
-                  onFocus={() => setIsInputFocused(true)}
-                  onBlur={() => setIsInputFocused(false)}
-                  placeholder="Ex: App que transforma memes em NFTs..."
-                  variant="accent"
-                  size="lg"
-                  className="w-full mb-4"
-                />
-                <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                  <div className="flex gap-2 flex-wrap">
-                    <span className="neo-border bg-[var(--cream)] px-3 py-1 text-sm font-body cursor-pointer hover:bg-[var(--lime)] transition-colors">
-                      + AI
-                    </span>
-                    <span className="neo-border bg-[var(--cream)] px-3 py-1 text-sm font-body cursor-pointer hover:bg-[var(--lime)] transition-colors">
-                      + SaaS
-                    </span>
-                    <span className="neo-border bg-[var(--cream)] px-3 py-1 text-sm font-body cursor-pointer hover:bg-[var(--lime)] transition-colors">
-                      + Mobile
-                    </span>
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={handleCreateIdea}
-                    className="neo-border-thick whitespace-nowrap"
-                  >
-                    <span className="flex items-center gap-2">
-                      <SparkleIcon className="w-5 h-5" />
-                      CRIAR IDEIA
-                    </span>
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Create Idea Section - Extracted component for performance */}
+          <CreateIdeaBox onCreateIdea={handleAddIdea} />
 
           {/* Banner Ad - Horizontal */}
           <div className="neo-border neo-shadow bg-[var(--cream)] h-24 mb-8 flex items-center justify-center animate-fade-in-up stagger-1">
@@ -478,7 +624,7 @@ export default function AppHome() {
           >
             <Button variant="accent" size="lg" className="neo-border-thick">
               <span className="flex items-center gap-2">
-                CARREGAR MAIS
+                LOAD MORE
                 <svg
                   className="w-5 h-5 animate-bounce-subtle"
                   viewBox="0 0 24 24"

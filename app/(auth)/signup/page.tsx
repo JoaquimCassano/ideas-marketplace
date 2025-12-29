@@ -168,7 +168,7 @@ export default function SignupPage() {
                   onChange={(e) => setName(e.target.value)}
                   variant="primary"
                   size="lg"
-                  placeholder="Your name"
+                  placeholder="This will be public"
                   disabled={isLoading}
                 />
               </div>
