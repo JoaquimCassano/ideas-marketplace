@@ -23,7 +23,7 @@ export async function PUT(
       );
     }
 
-    const ideaId = params.id;
+    const { id: ideaId } = await params;
     if (!ObjectId.isValid(ideaId)) {
       return NextResponse.json({ error: "Invalid idea ID" }, { status: 400 });
     }

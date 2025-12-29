@@ -15,97 +15,30 @@ import {
 
 interface Idea {
   id: string;
-  title: string;
-  description: string;
-  votes: number;
-  userVote: "up" | "down" | null;
-  author: string;
-  authorAvatar: string;
+  titulo: string;
+  descricao: string;
+  upvotes: number;
+  downvotes: number;
+  userVote: "upvote" | "downvote" | null;
+  autorId: string;
+  autorName?: string;
   tags: string[];
-  timeAgo: string;
-  comments: number;
+  createdAt: string;
 }
 
-const MOCK_IDEAS: Idea[] = [
-  {
-    id: "1",
-    title: "AI that transforms sketches into functional UI",
-    description:
-      "Draw a wireframe on paper, take a picture, and the AI generates React components with Tailwind. Perfect for rapid prototyping.",
-    votes: 342,
-    userVote: null,
-    author: "Lucas Dev",
-    authorAvatar: "🧑‍💻",
-    tags: ["AI", "UI/UX", "React"],
-    timeAgo: "2h ago",
-    comments: 47,
-  },
-  {
-    id: "2",
-    title: "Extension that blocks sites during pomodoro",
-    description:
-      "Integrates with Notion and Slack. During the timer, blocks social media and notifies your team that you're focused.",
-    votes: 289,
-    userVote: "up",
-    author: "Marina Tech",
-    authorAvatar: "👩‍🔬",
-    tags: ["Productivity", "Extension", "Integration"],
-    timeAgo: "5h ago",
-    comments: 32,
-  },
-  {
-    id: "3",
-    title: "Discord bot for pair programming",
-    description:
-      "Automatically connects devs with complementary skills. Uses AI for matchmaking based on stack and timezone.",
-    votes: 256,
-    userVote: null,
-    author: "Pedro Indie",
-    authorAvatar: "🚀",
-    tags: ["Bot", "Community", "AI"],
-    timeAgo: "8h ago",
-    comments: 28,
-  },
-  {
-    id: "4",
-    title: "Dashboard de métricas pra indie hackers",
-    description:
-      "Unifies MRR, churn, LTV from multiple SaaS. Anonymous benchmarks to compare with others in the same niche.",
-    votes: 198,
-    userVote: "down",
-    author: "Ana Builder",
-    authorAvatar: "🛠️",
-    tags: ["Analytics", "SaaS", "Dashboard"],
-    timeAgo: "12h ago",
-    comments: 19,
-  },
-  {
-    id: "5",
-    title: "CLI that generates landing pages with one sentence",
-    description:
-      "npx create-landing 'vegan recipes app'. Generates copy, selects photos, and deploys to Vercel automatically.",
-    votes: 175,
-    userVote: null,
-    author: "Thiago Code",
-    authorAvatar: "⌨️",
-    tags: ["CLI", "Automation", "Marketing"],
-    timeAgo: "1d ago",
-    comments: 23,
-  },
-  {
-    id: "6",
-    title: "Marketplace for abandoned side projects",
-    description:
-      "Buy and sell half-finished projects. Includes codebase, domain, and the 3 users still using it.",
-    votes: 421,
-    userVote: "up",
-    author: "Carla Startup",
-    authorAvatar: "💡",
-    tags: ["Marketplace", "Acquisitions", "Indie"],
-    timeAgo: "2d ago",
-    comments: 89,
-  },
-];
+interface ApiIdea {
+  id: string;
+  titulo: string;
+  descricao: string;
+  tags: string[];
+  autorId: string;
+  upvotes: number;
+  downvotes: number;
+  didUpvote: boolean;
+  didDownvote: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const IdeaFeedCard = memo(function IdeaFeedCard({
   idea,
@@ -113,14 +46,14 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
   index,
 }: {
   idea: Idea;
-  onVote: (id: string, vote: "up" | "down") => void;
+  onVote: (id: string, voteType: "upvote" | "downvote") => void;
   index: number;
 }) {
   const [isHovered, setIsHovered] = useState(false);
 
-  const getVoteButtonClass = (type: "up" | "down") => {
+  const getVoteButtonClass = (type: "upvote" | "downvote") => {
     const isActive = idea.userVote === type;
-    if (type === "up") {
+    if (type === "upvote") {
       return isActive
         ? "bg-[var(--lime)] scale-110"
         : "bg-white hover:bg-[var(--lime)] hover:scale-105";
@@ -138,6 +71,19 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
     "bg-[var(--hot-pink)] text-white",
   ];
 
+  const formatTimeAgo = (date: string) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
   return (
     <div
       className="neo-border neo-shadow bg-white p-5 hover-lift cursor-pointer group opacity-0 animate-fade-in-up"
@@ -149,53 +95,51 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex gap-4">
-        {/* Vote Section */}
         <div className="flex flex-col items-center gap-1 min-w-[60px]">
           <button
-            onClick={() => onVote(idea.id, "up")}
-            className={`neo-border p-2 transition-all duration-200 ${getVoteButtonClass("up")}`}
+            onClick={() => onVote(idea.id, "upvote")}
+            className={`neo-border p-2 transition-all duration-200 ${getVoteButtonClass("upvote")}`}
           >
             <ArrowUpIcon className="w-5 h-5" />
           </button>
           <span
             className={`font-display text-xl transition-all duration-300 ${
-              idea.userVote === "up"
+              idea.userVote === "upvote"
                 ? "text-[var(--lime)] scale-110"
-                : idea.userVote === "down"
+                : idea.userVote === "downvote"
                   ? "text-[var(--hot-pink)]"
                   : ""
             }`}
           >
-            {idea.votes}
+            {idea.upvotes - idea.downvotes}
           </span>
           <button
-            onClick={() => onVote(idea.id, "down")}
-            className={`neo-border p-2 transition-all duration-200 ${getVoteButtonClass("down")}`}
+            onClick={() => onVote(idea.id, "downvote")}
+            className={`neo-border p-2 transition-all duration-200 ${getVoteButtonClass("downvote")}`}
           >
             <ArrowDownIcon className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content Section */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-2xl">{idea.authorAvatar}</span>
-            <span className="font-body text-sm font-medium">{idea.author}</span>
+            <span className="font-body text-sm font-medium">
+              {idea.autorName || "Anonymous"}
+            </span>
             <span className="text-[var(--deep-black)]/40">•</span>
             <span className="font-body text-sm text-[var(--deep-black)]/60">
-              {idea.timeAgo}
+              {formatTimeAgo(idea.createdAt)}
             </span>
           </div>
 
           <h3 className="font-display text-lg md:text-xl mb-2 group-hover:text-[var(--hot-pink)] transition-colors">
-            {idea.title}
+            {idea.titulo}
           </h3>
 
           <p className="font-body text-[var(--deep-black)]/80 mb-4 line-clamp-2">
-            {idea.description}
+            {idea.descricao}
           </p>
 
-          {/* Tags */}
           <div className="flex flex-wrap gap-2 mb-3">
             {idea.tags.map((tag, idx) => (
               <span
@@ -207,7 +151,6 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
             ))}
           </div>
 
-          {/* Footer */}
           <div className="flex items-center gap-4">
             <button className="flex items-center gap-1 font-body text-sm text-[var(--deep-black)]/60 hover:text-[var(--hot-pink)] transition-colors">
               <svg
@@ -219,7 +162,7 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
               >
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              {idea.comments} comentários
+              0 comments
             </button>
             <button className="flex items-center gap-1 font-body text-sm text-[var(--deep-black)]/60 hover:text-[var(--electric-purple)] transition-colors">
               <svg
@@ -233,12 +176,11 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
                 <polyline points="16 6 12 2 8 6" />
                 <line x1="12" y1="2" x2="12" y2="15" />
               </svg>
-              compartilhar
+              share
             </button>
           </div>
         </div>
 
-        {/* Decorative element on hover */}
         <div
           className={`absolute -top-2 -right-2 transition-all duration-300 ${
             isHovered ? "opacity-100 rotate-12" : "opacity-0 rotate-0"
@@ -260,34 +202,81 @@ function CreateIdeaBox({
   onCreateIdea: (idea: Idea) => void;
   userName: string;
 }) {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [titulo, setTitulo] = useState("");
+  const [descricao, setDescricao] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const MAX_LENGTH = 500;
-  const showExtras = title.trim() || tags.length > 0;
+  const showExtras = titulo.trim() || tags.length > 0;
 
-  const handleSubmit = () => {
-    if (!title.trim()) return;
+  const validateForm = (): string | null => {
+    if (!titulo.trim()) {
+      return "Title is required";
+    }
+    if (!descricao.trim()) {
+      return "Description with content is required";
+    }
+    if (tags.length < 3) {
+      return `You need at least 3 tags (${tags.length}/3)`;
+    }
+    return null;
+  };
 
-    onCreateIdea({
-      id: Date.now().toString(),
-      title: title.trim(),
-      description: body.trim() || "Nova ideia da comunidade.",
-      votes: 1,
-      userVote: "up",
-      author: userName,
-      authorAvatar: "✨",
-      tags: tags.length > 0 ? tags : ["Novo"],
-      timeAgo: "agora",
-      comments: 0,
-    });
+  const handleSubmit = async () => {
+    const error = validateForm();
+    if (error) {
+      setErrorMessage(error);
+      return;
+    }
 
-    setTitle("");
-    setBody("");
-    setTags([]);
-    setTagInput("");
+    setErrorMessage("");
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/ideas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          titulo: titulo.trim(),
+          descricao: descricao.trim(),
+          tags: tags,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create idea");
+      }
+
+      const data = await response.json();
+
+      onCreateIdea({
+        id: data.id,
+        titulo: data.titulo,
+        descricao: data.descricao,
+        upvotes: 0,
+        downvotes: 0,
+        userVote: null,
+        autorId: data.autorId,
+        autorName: userName,
+        tags: data.tags,
+        createdAt: data.createdAt,
+      });
+
+      setTitulo("");
+      setDescricao("");
+      setTags([]);
+      setTagInput("");
+    } catch (error) {
+      console.error("Error creating idea:", error);
+      setErrorMessage("Error creating idea. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const addTag = () => {
@@ -301,6 +290,7 @@ function CreateIdeaBox({
   const removeTag = (tag: string) => {
     setTags(tags.filter((t) => t !== tag));
   };
+
   const handleTagKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -313,6 +303,31 @@ function CreateIdeaBox({
 
   return (
     <div className="neo-border neo-shadow-lg bg-white p-6 mb-6 animate-fade-in-up stagger-1">
+      {errorMessage && (
+        <div className="neo-border bg-[var(--hot-pink)] text-white p-4 mb-4 font-body text-sm flex items-start gap-3">
+          <svg
+            className="w-5 h-5 flex-shrink-0 mt-0.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <div className="flex-1">
+            <p className="font-medium">Oops!</p>
+            <p>{errorMessage}</p>
+          </div>
+          <button
+            onClick={() => setErrorMessage("")}
+            className="flex-shrink-0 hover:opacity-80"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div className="flex items-start gap-4">
         <div className="neo-border bg-[var(--lime)] p-3 hidden sm:block">
           <LightbulbIcon className="w-6 h-6" />
@@ -320,8 +335,8 @@ function CreateIdeaBox({
         <div className="flex-1">
           <Input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
             placeholder="Ex: App that turns memes into NFTs..."
             variant="accent"
             size="lg"
@@ -332,14 +347,14 @@ function CreateIdeaBox({
             <>
               <div className="flex justify-end mb-2">
                 <span className="text-sm font-body text-[var(--deep-black)]/50">
-                  {body.length}/{MAX_LENGTH}
+                  {descricao.length}/{MAX_LENGTH}
                 </span>
               </div>
               <textarea
-                value={body}
+                value={descricao}
                 onChange={(e) => {
                   if (e.target.value.length <= MAX_LENGTH) {
-                    setBody(e.target.value);
+                    setDescricao(e.target.value);
                   }
                 }}
                 placeholder="Descreva sua ideia em detalhes..."
@@ -382,17 +397,20 @@ function CreateIdeaBox({
                 </button>
               </div>
             </div>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleSubmit}
-              className="neo-border-thick whitespace-nowrap"
-            >
-              <span className="flex items-center gap-2">
-                <SparkleIcon className="w-5 h-5" />
-                CRIAR IDEIA
-              </span>
-            </Button>
+            <div className="flex gap-3 items-center">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="neo-border-thick whitespace-nowrap"
+              >
+                <span className="flex items-center gap-2">
+                  <SparkleIcon className="w-5 h-5" />
+                  {isLoading ? "CREATING..." : "CREATE IDEA"}
+                </span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -403,7 +421,9 @@ function CreateIdeaBox({
 export default function AppHome() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [ideas, setIdeas] = useState<Idea[]>(MOCK_IDEAS);
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -411,31 +431,105 @@ export default function AppHome() {
     }
   }, [status, router]);
 
-  const handleAddIdea = useCallback((idea: Idea) => {
-    setIdeas((prev) => [idea, ...prev]);
-  }, []);
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchIdeas();
+    }
+  }, [status, sortBy]);
 
-  const handleVote = useCallback((id: string, vote: "up" | "down") => {
-    setIdeas((prev) =>
-      prev.map((idea) => {
-        if (idea.id !== id) return idea;
+  const fetchIdeas = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/ideas?sortBy=${sortBy}&limit=50`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch ideas");
+      }
+      const data = await response.json();
+      const formattedIdeas = data.data.map((apiIdea: ApiIdea) => ({
+        id: apiIdea.id,
+        titulo: apiIdea.titulo,
+        descricao: apiIdea.descricao,
+        upvotes: apiIdea.upvotes,
+        downvotes: apiIdea.downvotes,
+        userVote: apiIdea.didUpvote
+          ? "upvote"
+          : apiIdea.didDownvote
+            ? "downvote"
+            : null,
+        autorId: apiIdea.autorId,
+        tags: apiIdea.tags,
+        createdAt: apiIdea.createdAt,
+      }));
+      setIdeas(formattedIdeas);
+    } catch (error) {
+      console.error("Error fetching ideas:", error);
+      setIdeas([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        let newVotes = idea.votes;
-        let newUserVote: "up" | "down" | null = vote;
+  const handleAddIdea = (newIdea: Idea) => {
+    setIdeas((prev) => [newIdea, ...prev]);
+  };
 
-        if (idea.userVote === vote) {
-          newUserVote = null;
-          newVotes = vote === "up" ? idea.votes - 1 : idea.votes + 1;
-        } else if (idea.userVote === null) {
-          newVotes = vote === "up" ? idea.votes + 1 : idea.votes - 1;
-        } else {
-          newVotes = vote === "up" ? idea.votes + 2 : idea.votes - 2;
-        }
+  const handleVote = async (id: string, voteType: "upvote" | "downvote") => {
+    try {
+      const response = await fetch(`/api/ideas/${id}/vote`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ voteType }),
+      });
 
-        return { ...idea, votes: newVotes, userVote: newUserVote };
-      })
-    );
-  }, []);
+      if (!response.ok) {
+        throw new Error("Failed to vote");
+      }
+
+      setIdeas((prev) =>
+        prev.map((idea) => {
+          if (idea.id !== id) return idea;
+
+          let newUserVote: "upvote" | "downvote" | null = voteType;
+          let newUpvotes = idea.upvotes;
+          let newDownvotes = idea.downvotes;
+
+          if (idea.userVote === voteType) {
+            newUserVote = null;
+            if (voteType === "upvote") {
+              newUpvotes--;
+            } else {
+              newDownvotes--;
+            }
+          } else if (idea.userVote === null) {
+            if (voteType === "upvote") {
+              newUpvotes++;
+            } else {
+              newDownvotes++;
+            }
+          } else {
+            if (voteType === "upvote") {
+              newUpvotes++;
+              newDownvotes--;
+            } else {
+              newDownvotes++;
+              newUpvotes--;
+            }
+          }
+
+          return {
+            ...idea,
+            upvotes: newUpvotes,
+            downvotes: newDownvotes,
+            userVote: newUserVote,
+          };
+        })
+      );
+    } catch (error) {
+      console.error("Error voting:", error);
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -453,6 +547,25 @@ export default function AppHome() {
   }
 
   const userName = session?.user?.name || "Creator";
+
+  const EmptyState = () => (
+    <div className="neo-border neo-shadow-lg bg-white p-12 text-center animate-fade-in-up">
+      <div className="mb-6 flex justify-center">
+        <div className="neo-border bg-[var(--sunny-yellow)] p-6 inline-block">
+          <LightbulbIcon className="w-12 h-12" />
+        </div>
+      </div>
+      <h3 className="font-display text-2xl mb-2">No ideas yet</h3>
+      <p className="font-body text-[var(--deep-black)]/60 mb-6">
+        Be the first one to share an idea!
+      </p>
+      <div className="inline-block neo-border bg-[var(--lime)] px-4 py-2">
+        <span className="font-body text-sm font-bold">
+          👆 Use the box above to create an idea
+        </span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[var(--cream)] bg-grid relative noise-overlay">
@@ -539,34 +652,53 @@ export default function AppHome() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button className="neo-border bg-[var(--lime)] px-3 py-1 font-body text-sm font-medium hover-lift">
-                Hot
+              <button
+                onClick={() => setSortBy("popular")}
+                className={`neo-border px-3 py-1 font-body text-sm font-medium hover-lift ${
+                  sortBy === "popular" ? "bg-[var(--lime)]" : "bg-white"
+                }`}
+              >
+                Popular
               </button>
-              <button className="neo-border bg-white px-3 py-1 font-body text-sm font-medium hover-lift">
+              <button
+                onClick={() => setSortBy("newest")}
+                className={`neo-border px-3 py-1 font-body text-sm font-medium hover-lift ${
+                  sortBy === "newest" ? "bg-[var(--lime)]" : "bg-white"
+                }`}
+              >
                 New
-              </button>
-              <button className="neo-border bg-white px-3 py-1 font-body text-sm font-medium hover-lift">
-                Top
               </button>
             </div>
           </div>
 
           {/* Ideas Feed */}
-          <div className="space-y-4 relative">
-            {ideas.map((idea, index) => (
-              <div key={idea.id}>
-                <IdeaFeedCard idea={idea} onVote={handleVote} index={index} />
-                {/* Mobile Square Ads - after 2nd and 4th idea */}
-                {(index === 1 || index === 3) && (
-                  <div className="xl:hidden neo-border neo-shadow bg-[var(--cream)] aspect-square max-w-xs mx-auto flex items-center justify-center mt-4">
-                    <span className="font-display text-3xl text-[var(--deep-black)]/40">
-                      AD
-                    </span>
-                  </div>
-                )}
+          {isLoading ? (
+            <div className="neo-border neo-shadow bg-white p-8 text-center">
+              <div className="inline-block neo-border bg-[var(--lime)] p-3 animate-pulse mb-4">
+                <LightbulbIcon className="w-6 h-6" />
               </div>
-            ))}
-          </div>
+              <p className="font-body text-[var(--deep-black)]/60">
+                Carregando ideias...
+              </p>
+            </div>
+          ) : ideas.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="space-y-4 relative">
+              {ideas.map((idea, index) => (
+                <div key={idea.id}>
+                  <IdeaFeedCard idea={idea} onVote={handleVote} index={index} />
+                  {(index === 1 || index === 3) && (
+                    <div className="xl:hidden neo-border neo-shadow bg-[var(--cream)] aspect-square max-w-xs mx-auto flex items-center justify-center mt-4">
+                      <span className="font-display text-3xl text-[var(--deep-black)]/40">
+                        AD
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Load More */}
           <div

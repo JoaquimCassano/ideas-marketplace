@@ -42,12 +42,14 @@ export function Button({
   size = "md",
   fullWidth = false,
   className = "",
+  disabled = false,
   children,
   ...props
 }: ButtonProps) {
   return (
     <button
-      className={`neo-border neo-shadow-sm font-display hover-lift transition-colors ${variantStyles[variant]} ${sizeStyles[size]} ${fullWidth ? "w-full" : ""} ${className}`}
+      disabled={disabled}
+      className={`neo-border neo-shadow-sm font-display hover-lift transition-colors ${variantStyles[variant]} ${sizeStyles[size]} ${fullWidth ? "w-full" : ""} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
       {...props}
     >
       {children}

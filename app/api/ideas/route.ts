@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/lib/auth";
 import { getDb } from "@/app/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 interface Comentario {
   userId: string;
@@ -9,10 +10,12 @@ interface Comentario {
 }
 
 interface IdeaDocument {
+  _id?: ObjectId;
   titulo: string;
   descricao?: string;
   tags: string[];
   autorId: string;
+  autorName: string;
   upvotes: string[];
   downvotes: string[];
   comentarios: Comentario[];
@@ -31,15 +34,23 @@ export async function POST(request: Request) {
     const { titulo, descricao, tags } = body;
 
     if (!titulo || typeof titulo !== "string" || titulo.trim().length === 0) {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    }
+
+    if (
+      !descricao ||
+      typeof descricao !== "string" ||
+      descricao.trim().length === 0
+    ) {
       return NextResponse.json(
-        { error: "Titulo is required" },
+        { error: "Description with content is required" },
         { status: 400 }
       );
     }
 
-    if (tags && !Array.isArray(tags)) {
+    if (!tags || !Array.isArray(tags) || tags.length < 3) {
       return NextResponse.json(
-        { error: "Tags must be an array" },
+        { error: "At least 3 tags are required" },
         { status: 400 }
       );
     }
@@ -52,6 +63,7 @@ export async function POST(request: Request) {
       descricao: descricao?.trim() || "",
       tags: tags || [],
       autorId: session.user.id,
+      autorName: session.user.name || "Anonymous",
       upvotes: [],
       downvotes: [],
       comentarios: [],
@@ -92,17 +104,31 @@ export async function GET(request: Request) {
     const db = await getDb();
     const ideasCollection = db.collection<IdeaDocument>("ideas");
 
-    let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
-    if (sortBy === "popular") {
-      sortOption = { upvotes: -1, createdAt: -1 };
-    }
+    let ideas;
 
-    const ideas = await ideasCollection
-      .find({})
-      .sort(sortOption)
-      .limit(limit)
-      .skip(skip)
-      .toArray();
+    if (sortBy === "popular") {
+      ideas = await ideasCollection
+        .aggregate<IdeaDocument>([
+          {
+            $addFields: {
+              score: {
+                $subtract: [{ $size: "$upvotes" }, { $size: "$downvotes" }],
+              },
+            },
+          },
+          { $sort: { score: -1, createdAt: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+        ])
+        .toArray();
+    } else {
+      ideas = await ideasCollection
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(skip)
+        .toArray();
+    }
 
     const total = await ideasCollection.countDocuments();
 
@@ -112,8 +138,15 @@ export async function GET(request: Request) {
       descricao: idea.descricao,
       tags: idea.tags,
       autorId: idea.autorId,
+      autorName: idea.autorName || "Anonymous",
       upvotes: idea.upvotes?.length || 0,
       downvotes: idea.downvotes?.length || 0,
+      didUpvote: session.user?.id
+        ? idea.upvotes?.includes(session.user.id) || false
+        : false,
+      didDownvote: session.user?.id
+        ? idea.downvotes?.includes(session.user.id) || false
+        : false,
       createdAt: idea.createdAt,
       updatedAt: idea.updatedAt,
     }));
