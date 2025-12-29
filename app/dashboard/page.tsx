@@ -301,7 +301,6 @@ function CreateIdeaBox({
   const removeTag = (tag: string) => {
     setTags(tags.filter((t) => t !== tag));
   };
-
   const handleTagKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();

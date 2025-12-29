@@ -76,3 +76,65 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const sortBy = searchParams.get("sortBy") || "newest";
+    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const skip = parseInt(searchParams.get("skip") || "0", 10);
+
+    const db = await getDb();
+    const ideasCollection = db.collection<IdeaDocument>("ideas");
+
+    let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
+    if (sortBy === "popular") {
+      sortOption = { upvotes: -1, createdAt: -1 };
+    }
+
+    const ideas = await ideasCollection
+      .find({})
+      .sort(sortOption)
+      .limit(limit)
+      .skip(skip)
+      .toArray();
+
+    const total = await ideasCollection.countDocuments();
+
+    const formattedIdeas = ideas.map((idea) => ({
+      id: idea._id?.toString(),
+      titulo: idea.titulo,
+      descricao: idea.descricao,
+      tags: idea.tags,
+      autorId: idea.autorId,
+      upvotes: idea.upvotes?.length || 0,
+      downvotes: idea.downvotes?.length || 0,
+      createdAt: idea.createdAt,
+      updatedAt: idea.updatedAt,
+    }));
+
+    return NextResponse.json(
+      {
+        data: formattedIdeas,
+        pagination: {
+          total,
+          limit,
+          skip,
+          hasMore: skip + limit < total,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching ideas:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
