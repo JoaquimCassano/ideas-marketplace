@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, memo, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Markdown from "react-markdown";
 import {
   LightbulbIcon,
@@ -255,8 +257,10 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
 // Extracted CreateIdeaBox component to prevent re-renders of the entire page
 function CreateIdeaBox({
   onCreateIdea,
+  userName,
 }: {
   onCreateIdea: (idea: Idea) => void;
+  userName: string;
 }) {
   const [newIdea, setNewIdea] = useState("");
   const [ideaBody, setIdeaBody] = useState("");
@@ -265,12 +269,19 @@ function CreateIdeaBox({
   const [newTags, setNewTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
-  const userName = "Creator";
 
   const MAX_BODY_LENGTH = 500;
 
+  // Use refs to avoid re-adding event listeners on every state change
+  const stateRef = useRef({ newIdea, ideaBody, newTags });
+
+  useEffect(() => {
+    stateRef.current = { newIdea, ideaBody, newTags };
+  });
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const { newIdea, ideaBody, newTags } = stateRef.current;
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target as Node) &&
@@ -285,7 +296,7 @@ function CreateIdeaBox({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [newIdea, ideaBody, newTags]);
+  }, []); // Empty deps - listener added once
 
   const addTag = () => {
     const trimmed = tagInput.trim();
@@ -340,10 +351,8 @@ function CreateIdeaBox({
     <div
       ref={containerRef}
       onClick={() => !isExpanded && setIsExpanded(true)}
-      className={`neo-border neo-shadow-lg bg-white p-6 mb-6 transition-shadow duration-200 animate-fade-in-up stagger-1 ${
-        isExpanded
-          ? "shadow-[12px_12px_0_var(--deep-black)]"
-          : "cursor-pointer hover:shadow-[8px_8px_0_var(--deep-black)]"
+      className={`neo-border neo-shadow-lg bg-white p-6 mb-6 animate-fade-in-up stagger-1 ${
+        isExpanded ? "" : "cursor-pointer"
       }`}
     >
       <div className="flex items-start gap-4">
@@ -470,7 +479,15 @@ function CreateIdeaBox({
 }
 
 export default function AppHome() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [ideas, setIdeas] = useState<Idea[]>(MOCK_IDEAS);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   const handleAddIdea = useCallback((idea: Idea) => {
     setIdeas((prev) => [idea, ...prev]);
@@ -497,6 +514,23 @@ export default function AppHome() {
       })
     );
   }, []);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-[var(--cream)] flex items-center justify-center">
+        <div className="neo-border neo-shadow bg-white p-8">
+          <div className="flex items-center gap-3">
+            <div className="neo-border bg-[var(--lime)] p-3 animate-pulse">
+              <LightbulbIcon className="w-6 h-6" />
+            </div>
+            <span className="font-display text-xl">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const userName = session?.user?.name || "Creator";
 
   return (
     <div className="min-h-screen bg-[var(--cream)] bg-grid relative noise-overlay">
@@ -555,7 +589,7 @@ export default function AppHome() {
           <div className="mb-8 animate-fade-in-up">
             <div className="flex items-center gap-3 mb-2">
               <h1 className="font-display text-4xl md:text-5xl">
-                Hi, <span className="text-[var(--hot-pink)]">Creator</span>
+                Hi, <span className="text-[var(--hot-pink)]">{userName}</span>
               </h1>
             </div>
             <p className="font-body text-lg text-[var(--deep-black)]/70">
@@ -564,7 +598,7 @@ export default function AppHome() {
           </div>
 
           {/* Create Idea Section - Extracted component for performance */}
-          <CreateIdeaBox onCreateIdea={handleAddIdea} />
+          <CreateIdeaBox onCreateIdea={handleAddIdea} userName={userName} />
 
           {/* Banner Ad - Horizontal */}
           <div className="neo-border neo-shadow bg-[var(--cream)] h-24 mb-8 flex items-center justify-center animate-fade-in-up stagger-1">
@@ -598,22 +632,17 @@ export default function AppHome() {
           {/* Ideas Feed */}
           <div className="space-y-4 relative">
             {ideas.map((idea, index) => (
-              <>
-                <IdeaFeedCard
-                  key={idea.id}
-                  idea={idea}
-                  onVote={handleVote}
-                  index={index}
-                />
+              <div key={idea.id}>
+                <IdeaFeedCard idea={idea} onVote={handleVote} index={index} />
                 {/* Mobile Square Ads - after 2nd and 4th idea */}
                 {(index === 1 || index === 3) && (
-                  <div className="xl:hidden neo-border neo-shadow bg-[var(--cream)] aspect-square max-w-xs mx-auto flex items-center justify-center">
+                  <div className="xl:hidden neo-border neo-shadow bg-[var(--cream)] aspect-square max-w-xs mx-auto flex items-center justify-center mt-4">
                     <span className="font-display text-3xl text-[var(--deep-black)]/40">
                       AD
                     </span>
                   </div>
                 )}
-              </>
+              </div>
             ))}
           </div>
 

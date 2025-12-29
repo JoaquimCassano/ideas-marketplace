@@ -47,7 +47,7 @@ export function Input({
 }: InputProps) {
   return (
     <input
-      className={`neo-border neo-shadow-sm font-body focus:outline-none focus:ring-4 transition-all ${variantStyles[variant]} ${sizeStyles[size]} ${fullWidth ? "w-full" : ""} ${className}`}
+      className={`neo-border neo-shadow-sm font-body focus:outline-none focus:ring-4 transition-shadow ${variantStyles[variant]} ${sizeStyles[size]} ${fullWidth ? "w-full" : ""} ${className}`}
       {...props}
     />
   );
