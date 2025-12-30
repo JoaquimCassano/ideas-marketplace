@@ -86,7 +86,7 @@ export default function Home() {
               <span className="bg-[var(--lime)] neo-border px-2 font-bold">
                 ad credits
               </span>{" "}
-              to promote your SaaS.
+              to promote your projects.
             </p>
 
             <form

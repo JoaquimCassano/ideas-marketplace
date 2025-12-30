@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, memo } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,6 +24,7 @@ interface Idea {
   autorId: string;
   autorName?: string;
   tags: string[];
+  commentCount: number;
   createdAt: string;
 }
 
@@ -38,6 +39,7 @@ interface ApiIdea {
   downvotes: number;
   didUpvote: boolean;
   didDownvote: boolean;
+  comentarios: unknown[];
   createdAt: string;
   updatedAt: string;
 }
@@ -88,7 +90,7 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
 
   return (
     <div
-      className="neo-border neo-shadow bg-white p-5 hover-lift cursor-pointer group opacity-0 animate-fade-in-up"
+      className="neo-border neo-shadow bg-white p-5 hover-lift group opacity-0 animate-fade-in-up"
       style={{
         animationDelay: `${index * 0.1}s`,
         animationFillMode: "forwards",
@@ -134,9 +136,11 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
             </span>
           </div>
 
-          <h3 className="font-display text-lg md:text-xl mb-2 group-hover:text-[var(--hot-pink)] transition-colors">
-            {idea.titulo}
-          </h3>
+          <Link href={`/idea/${idea.id}`}>
+            <h3 className="font-display text-lg md:text-xl mb-2 group-hover:text-[var(--hot-pink)] transition-colors">
+              {idea.titulo}
+            </h3>
+          </Link>
 
           <p className="font-body text-[var(--deep-black)]/80 mb-4 line-clamp-2">
             {idea.descricao}
@@ -154,7 +158,10 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1 font-body text-sm text-[var(--deep-black)]/60 hover:text-[var(--hot-pink)] transition-colors">
+            <Link
+              href={`/idea/${idea.id}`}
+              className="flex items-center gap-1 font-body text-sm text-[var(--deep-black)]/60 hover:text-[var(--hot-pink)] transition-colors"
+            >
               <svg
                 className="w-4 h-4"
                 viewBox="0 0 24 24"
@@ -164,8 +171,8 @@ const IdeaFeedCard = memo(function IdeaFeedCard({
               >
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              0 comments
-            </button>
+              {idea.commentCount || 0} comments
+            </Link>
             <button className="flex items-center gap-1 font-body text-sm text-[var(--deep-black)]/60 hover:text-[var(--electric-purple)] transition-colors">
               <svg
                 className="w-4 h-4"
@@ -266,6 +273,7 @@ function CreateIdeaBox({
         autorId: data.autorId,
         autorName: userName,
         tags: data.tags,
+        commentCount: 0,
         createdAt: data.createdAt,
       });
 
@@ -427,19 +435,7 @@ export default function AppHome() {
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      fetchIdeas();
-    }
-  }, [status, sortBy]);
-
-  const fetchIdeas = async () => {
+  const fetchIdeas = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/ideas?sortBy=${sortBy}&limit=50`);
@@ -461,6 +457,7 @@ export default function AppHome() {
         autorId: apiIdea.autorId,
         autorName: apiIdea.autorName || "Anonymous",
         tags: apiIdea.tags,
+        commentCount: apiIdea.comentarios?.length || 0,
         createdAt: apiIdea.createdAt,
       }));
       setIdeas(formattedIdeas);
@@ -470,7 +467,19 @@ export default function AppHome() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sortBy]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchIdeas();
+    }
+  }, [status, sortBy, fetchIdeas]);
 
   const handleAddIdea = (newIdea: Idea) => {
     setIdeas((prev) => [newIdea, ...prev]);

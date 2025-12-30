@@ -147,6 +147,7 @@ export async function GET(request: Request) {
       didDownvote: session.user?.id
         ? idea.downvotes?.includes(session.user.id) || false
         : false,
+      comentarios: idea.comentarios || [],
       createdAt: idea.createdAt,
       updatedAt: idea.updatedAt,
     }));
