@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, memo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   LightbulbIcon,
   ArrowUpIcon,
@@ -32,6 +33,7 @@ interface ApiIdea {
   descricao: string;
   tags: string[];
   autorId: string;
+  autorName?: string;
   upvotes: number;
   downvotes: number;
   didUpvote: boolean;
@@ -457,6 +459,7 @@ export default function AppHome() {
             ? "downvote"
             : null,
         autorId: apiIdea.autorId,
+        autorName: apiIdea.autorName || "Anonymous",
         tags: apiIdea.tags,
         createdAt: apiIdea.createdAt,
       }));
@@ -594,36 +597,37 @@ export default function AppHome() {
               <SparkleIcon className="w-4 h-4" />
               <span className="font-display text-sm">247 credits</span>
             </div>
-            <div className="neo-border bg-white w-10 h-10 flex items-center justify-center text-xl">
-              🧑‍💻
-            </div>
+            <Link href="/settings">
+              <div className="neo-border bg-white w-10 h-10 flex items-center justify-center text-xl cursor-pointer hover-lift">
+                🧑‍💻
+              </div>
+            </Link>
           </div>
         </div>
       </nav>
 
       {/* Main Content with Sidebar Ads */}
       <div className="relative">
-        {/* Sidebar Ads - Desktop only, positioned next to container, aligned with input box */}
-        <div className="hidden xl:block absolute left-[calc(50%-32rem-220px)] top-36 z-40">
-          <div className="neo-border neo-shadow bg-[var(--cream)] w-72 h-72 flex items-center justify-center sticky top-24">
+        <div className="hidden xl:block absolute left-[calc(50%-39rem)] 2xl:left-[calc(50%-47rem)] top-36 z-40">
+          <div className="neo-border neo-shadow bg-[var(--cream)] w-56 h-56 2xl:w-72 2xl:h-72 flex items-center justify-center sticky top-24">
             <span className="font-display text-3xl text-[var(--deep-black)]/40">
               AD
             </span>
           </div>
         </div>
-        <div className="hidden xl:block absolute right-[calc(50%-32rem-220px)] top-36 z-40">
-          <div className="neo-border neo-shadow bg-[var(--cream)] w-72 h-72 flex items-center justify-center sticky top-24">
+        <div className="hidden xl:block absolute right-[calc(50%-39rem)] 2xl:right-[calc(50%-47rem)] top-36 z-40">
+          <div className="neo-border neo-shadow bg-[var(--cream)] w-56 h-56 2xl:w-72 2xl:h-72 flex items-center justify-center sticky top-24">
             <span className="font-display text-3xl text-[var(--deep-black)]/40">
               AD
             </span>
           </div>
         </div>
 
-        <main className="max-w-4xl mx-auto px-6 py-8">
+        <main className="max-w-3xl 2xl:max-w-4xl mx-auto px-4 xl:px-6 py-8">
           {/* Header Greeting */}
           <div className="mb-8 animate-fade-in-up">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="font-display text-4xl md:text-5xl">
+              <h1 className="font-display text-4xl md:text-5xl xl:text-4xl 2xl:text-5xl">
                 Hi, <span className="text-[var(--hot-pink)]">{userName}</span>
               </h1>
             </div>

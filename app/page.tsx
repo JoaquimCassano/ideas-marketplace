@@ -31,7 +31,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[var(--cream)] bg-grid relative noise-overlay">
-      {/* Decorative Elements */}
       <div className="fixed top-20 left-10 animate-spin-slow opacity-20 pointer-events-none">
         <StarIcon className="w-16 h-16 text-[var(--hot-pink)]" />
       </div>
@@ -39,7 +38,6 @@ export default function Home() {
         <SparkleIcon className="w-12 h-12 text-[var(--electric-purple)]" />
       </div>
 
-      {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--cream)] neo-border-thick border-t-0 border-l-0 border-r-0">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -68,10 +66,8 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <section className="snap-section pt-32 pb-20 px-6 relative overflow-hidden min-h-screen flex items-center">
         <div className="max-w-5xl mx-auto w-full">
-          {/* Centered Text */}
           <div className="text-center relative z-10 mb-20">
             <div className="inline-flex items-center gap-2 neo-border neo-shadow-sm bg-[var(--sunny-yellow)] px-4 py-2 mb-8 animate-wiggle">
               <SparkleIcon className="w-4 h-4" />
@@ -79,7 +75,8 @@ export default function Home() {
             </div>
 
             <h1 className="font-display text-6xl md:text-8xl lg:text-9xl leading-[0.85] mb-8">
-              TURN IDEAS
+              TURN
+              <span className="font-handwriting italic"> IDEAS</span>
               <br />
               INTO USERS
             </h1>
@@ -121,8 +118,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Floating Cards Below */}
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto justify-items-center md:justify-items-start">
             <div className="transform hover:scale-105 transition-transform">
               <IdeaCard
                 title="AI-powered meal planner that syncs with grocery stores"
@@ -157,7 +153,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
       <section
         id="how-it-works"
         className="snap-section py-24 px-6 bg-white neo-border-thick border-l-0 border-r-0"
@@ -185,7 +180,7 @@ export default function Home() {
             <StepCard
               number="2"
               title="COLLECT UPVOTES"
-              description="Community votes on the best ideas. Quality rises to the top."
+              description="Community votes on the best ideas."
               color="bg-[var(--lime)]"
               image="/racoon-images/writing.jpg"
             />
@@ -200,7 +195,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section id="features" className="snap-section py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -265,7 +259,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="snap-section py-24 px-6 bg-[var(--deep-black)] relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 animate-float">
@@ -346,7 +339,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="py-12 px-6 neo-border-thick border-b-0 border-l-0 border-r-0">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">

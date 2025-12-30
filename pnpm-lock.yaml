@@ -42,6 +42,9 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.2.3(@types/react@19.2.7)
+      '@types/vara':
+        specifier: ^1.1.4
+        version: 1.1.4
       autoprefixer:
         specifier: ^10
         version: 10.4.23(postcss@8.5.6)
@@ -496,6 +499,9 @@ packages:
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
+
+  '@types/vara@1.1.4':
+    resolution: {integrity: sha512-LYXunvwnYoyzhNZGmQNrxFMPoeheW58vmxYfpwSQ8IBliOjMVbN+UvKhdJFBGE/IO0GmQjZ7MUinbMILl82tug==}
 
   '@types/webidl-conversions@7.0.3':
     resolution: {integrity: sha512-CiJJvcRtIgzadHCYXw7dqEnMNRjhGZlYK05Mj9OyktqV8uVT8fD2BFOB7S1uwBE3Kj2Z+4UyPmFw/Ixgw/LAlA==}
@@ -2677,6 +2683,8 @@ snapshots:
   '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
+
+  '@types/vara@1.1.4': {}
 
   '@types/webidl-conversions@7.0.3': {}
 
