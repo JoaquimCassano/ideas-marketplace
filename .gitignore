@@ -42,3 +42,5 @@ next-env.d.ts
 
 .playwright-mcp/
 postman-collection.json
+
+.vscode/

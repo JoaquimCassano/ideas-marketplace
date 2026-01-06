@@ -7,3 +7,10 @@ export { UsersIcon } from "./UsersIcon";
 export { RocketIcon } from "./RocketIcon";
 export { StarIcon } from "./StarIcon";
 export { SparkleIcon } from "./SparkleIcon";
+export {
+  XIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  InformationCircleIcon,
+} from "./StatusIcons";
+

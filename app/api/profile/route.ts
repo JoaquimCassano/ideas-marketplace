@@ -24,6 +24,7 @@ export async function GET() {
     return NextResponse.json({
       name: user.name,
       email: user.email,
+      avatarBase64: user.avatarBase64 || null,
     });
   } catch (error) {
     console.error("Profile fetch error:", error);

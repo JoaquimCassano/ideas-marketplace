@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       email,
       password: hashedPassword,
       name: name || email.split("@")[0],
+      avatarBase64: null,
       createdAt: new Date(),
     });
 

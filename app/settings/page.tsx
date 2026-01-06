@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button, Input, ConfirmModal, ArrowLeftIcon } from "../components";
+import { AvatarUploader } from "../components/profile";
+import { getUserAvatar } from "../lib/avatar";
 import Link from "next/link";
 
 export default function ProfilePage() {
@@ -12,6 +14,7 @@ export default function ProfilePage() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
   const [profileError, setProfileError] = useState("");
@@ -47,6 +50,7 @@ export default function ProfilePage() {
       const data = await response.json();
       setName(data.name);
       setEmail(data.email);
+      setAvatarBase64(data.avatarBase64);
     } catch (error) {
       console.error("Error fetching profile:", error);
       setProfileError("Failed to load profile");
@@ -82,9 +86,10 @@ export default function ProfilePage() {
 
       setProfileMessage("Name updated! Redirecting...");
       await update({ name: name.trim() });
+
       setTimeout(() => {
         router.push("/dashboard");
-      }, 1500);
+      }, 500);
     } catch (error) {
       console.error("Error updating profile:", error);
       setProfileError("An error occurred. Please try again.");
@@ -221,6 +226,27 @@ export default function ProfilePage() {
 
         <div className="space-y-6">
           <div className="neo-border-thick neo-shadow-lg bg-white p-6 animate-fade-in-up stagger-1">
+            <h2 className="font-display text-2xl mb-6 flex items-center gap-2">
+              <span className="text-2xl">👤</span>
+              Profile Picture
+            </h2>
+
+            <AvatarUploader
+              currentAvatar={getUserAvatar(email, avatarBase64)}
+              onAvatarUpdate={(newAvatar) => {
+                setAvatarBase64(newAvatar);
+                setProfileMessage("Avatar updated successfully!");
+                setTimeout(() => setProfileMessage(""), 3000);
+              }}
+              onAvatarRemove={() => {
+                setAvatarBase64(null);
+                setProfileMessage("Avatar removed successfully!");
+                setTimeout(() => setProfileMessage(""), 3000);
+              }}
+            />
+          </div>
+
+          <div className="neo-border-thick neo-shadow-lg bg-white p-6 animate-fade-in-up stagger-2">
             <h2 className="font-display text-2xl mb-4 flex items-center gap-2">
               <span className="text-2xl">📝</span>
               Personal Information
