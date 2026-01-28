@@ -44,3 +44,6 @@ next-env.d.ts
 postman-collection.json
 
 .vscode/
+
+excalidraw.log
+.serena/

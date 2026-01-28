@@ -17,6 +17,7 @@ export default function AppHome() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
+  const [credits, setCredits] = useState<number>(0);
 
   const fetchIdeas = useCallback(async () => {
     setIsLoading(true);
@@ -63,6 +64,25 @@ export default function AppHome() {
       fetchIdeas();
     }
   }, [status, sortBy, fetchIdeas]);
+
+  const fetchCredits = useCallback(async () => {
+    try {
+      const response = await fetch("/api/credits");
+      if (!response.ok) {
+        throw new Error("Failed to fetch credits");
+      }
+      const data = await response.json();
+      setCredits(data.credits);
+    } catch (error) {
+      console.error("Error fetching credits:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchCredits();
+    }
+  }, [status, fetchCredits]);
 
   const handleAddIdea = (newIdea: Idea) => {
     setIdeas((prev) => [newIdea, ...prev]);
@@ -174,7 +194,7 @@ export default function AppHome() {
           <div className="flex items-center gap-4">
             <div className="neo-border bg-[var(--sunny-yellow)] px-3 py-1 hidden sm:flex items-center gap-2">
               <SparkleIcon className="w-4 h-4" />
-              <span className="font-display text-sm">247 credits</span>
+              <span className="font-display text-sm">{credits} credits</span>
             </div>
             <Link href="/settings">
               <div className="neo-border bg-white w-10 h-10 flex items-center justify-center text-xl cursor-pointer hover-lift">
