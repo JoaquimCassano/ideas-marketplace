@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   LightbulbIcon,
   ArrowUpIcon,
@@ -13,21 +14,10 @@ import {
   FeatureCard,
   StepCard,
   Button,
-  Input,
 } from "./components";
 
 export default function Home() {
-  const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setIsSubmitted(true);
-      setTimeout(() => setIsSubmitted(false), 3000);
-      setEmail("");
-    }
-  };
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-[var(--cream)] bg-grid relative noise-overlay">
@@ -59,8 +49,12 @@ export default function Home() {
             >
               Features
             </a>
-            <Button variant="primary" size="sm">
-              JOIN WAITLIST
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => router.push("/login")}
+            >
+              GET STARTED
             </Button>
           </div>
         </div>
@@ -89,33 +83,15 @@ export default function Home() {
               to promote your projects.
             </p>
 
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto"
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              onClick={() => router.push("/login")}
+              className="neo-border-thick neo-shadow-lg whitespace-nowrap mx-auto"
             >
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                variant="accent"
-                size="lg"
-                className="flex-1"
-                required
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                className="neo-border-thick neo-shadow-lg whitespace-nowrap"
-              >
-                {isSubmitted ? "🎉 JOINED!" : "JOIN NOW"}
-              </Button>
-            </form>
-
-            <p className="font-body text-sm mt-4 opacity-60">
-              Be among the first 500 to get exclusive benefits
-            </p>
+              START SHARING
+            </Button>
           </div>
 
           <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto justify-items-center md:justify-items-start">
@@ -291,30 +267,6 @@ export default function Home() {
             Join the waitlist and be part of the movement that transforms how
             founders share, discover, and grow.
           </p>
-
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto"
-          >
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              variant="primary"
-              size="lg"
-              className="neo-border-thick flex-1"
-              required
-            />
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              className="neo-border-thick neo-shadow-lg px-10 text-xl"
-            >
-              {isSubmitted ? "🎉 DONE!" : "COUNT ME IN"}
-            </Button>
-          </form>
 
           <div className="mt-12 flex justify-center gap-8 flex-wrap">
             <div className="flex items-center gap-2">

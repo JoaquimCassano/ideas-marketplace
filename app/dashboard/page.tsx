@@ -11,6 +11,13 @@ import IdeaFeedCard from "./components/IdeaFeedCard";
 import CreateIdeaBox from "./components/CreateIdeaBox";
 import EmptyState from "./components/EmptyState";
 
+interface Ad {
+  _id: string;
+  imageUrl?: string;
+  linkUrl?: string;
+  type: "banner" | "square";
+}
+
 export default function AppHome() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -18,6 +25,7 @@ export default function AppHome() {
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"newest" | "popular">("newest");
   const [credits, setCredits] = useState<number>(0);
+  const [ads, setAds] = useState<Ad[]>([]);
 
   const fetchIdeas = useCallback(async () => {
     setIsLoading(true);
@@ -84,8 +92,45 @@ export default function AppHome() {
     }
   }, [status, fetchCredits]);
 
+  const fetchAds = useCallback(async () => {
+    try {
+      const response = await fetch("/api/ads");
+      if (!response.ok) return;
+      const data = await response.json();
+      setAds(data.ads || []);
+    } catch (error) {
+      console.error("Error fetching ads:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchAds();
+    }
+  }, [status, fetchAds]);
+
   const handleAddIdea = (newIdea: Idea) => {
     setIdeas((prev) => [newIdea, ...prev]);
+  };
+
+  const bannerAd = ads.find((ad) => ad.type === "banner");
+  const squareAds = ads.filter((ad) => ad.type === "square");
+
+  const renderAd = (ad: Ad | null, className: string) => {
+    if (!ad?.imageUrl || !ad?.linkUrl) {
+      return (
+        <div className={className}>
+          <span className="font-display text-3xl text-[var(--deep-black)]/40">
+            AD
+          </span>
+        </div>
+      );
+    }
+    return (
+      <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className={className}>
+        <img src={ad.imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
+      </a>
+    );
   };
 
   const handleVote = async (id: string, voteType: "upvote" | "downvote") => {
@@ -192,10 +237,10 @@ export default function AppHome() {
             <span className="font-display text-2xl">IDEAMARKET</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="neo-border bg-[var(--sunny-yellow)] px-3 py-1 hidden sm:flex items-center gap-2">
+            <Link href="/ads" className="neo-border bg-[var(--sunny-yellow)] px-3 py-1 hidden sm:flex items-center gap-2 hover-lift cursor-pointer">
               <SparkleIcon className="w-4 h-4" />
               <span className="font-display text-sm">{credits} credits</span>
-            </div>
+            </Link>
             <Link href="/settings">
               <div className="neo-border bg-white w-10 h-10 flex items-center justify-center text-xl cursor-pointer hover-lift">
                 {session?.user?.image ? (
@@ -222,18 +267,16 @@ export default function AppHome() {
       {/* Main Content with Sidebar Ads */}
       <div className="relative">
         <div className="hidden xl:block absolute left-[calc(50%-39rem)] 2xl:left-[calc(50%-47rem)] top-36 z-40">
-          <div className="neo-border neo-shadow bg-[var(--cream)] w-56 h-56 2xl:w-72 2xl:h-72 flex items-center justify-center sticky top-24">
-            <span className="font-display text-3xl text-[var(--deep-black)]/40">
-              AD
-            </span>
-          </div>
+          {renderAd(
+            squareAds[0] || null,
+            "neo-border neo-shadow bg-[var(--cream)] w-56 h-56 2xl:w-72 2xl:h-72 flex items-center justify-center sticky top-24 overflow-hidden"
+          )}
         </div>
         <div className="hidden xl:block absolute right-[calc(50%-39rem)] 2xl:right-[calc(50%-47rem)] top-36 z-40">
-          <div className="neo-border neo-shadow bg-[var(--cream)] w-56 h-56 2xl:w-72 2xl:h-72 flex items-center justify-center sticky top-24">
-            <span className="font-display text-3xl text-[var(--deep-black)]/40">
-              AD
-            </span>
-          </div>
+          {renderAd(
+            squareAds[1] || squareAds[0] || null,
+            "neo-border neo-shadow bg-[var(--cream)] w-56 h-56 2xl:w-72 2xl:h-72 flex items-center justify-center sticky top-24 overflow-hidden"
+          )}
         </div>
 
         <main className="max-w-3xl 2xl:max-w-4xl mx-auto px-4 xl:px-6 py-8">
@@ -253,11 +296,10 @@ export default function AppHome() {
           <CreateIdeaBox onCreateIdea={handleAddIdea} userName={userName} />
 
           {/* Banner Ad - Horizontal */}
-          <div className="neo-border neo-shadow bg-[var(--cream)] h-24 mb-8 flex items-center justify-center animate-fade-in-up stagger-1">
-            <span className="font-display text-2xl text-[var(--deep-black)]/40">
-              AD
-            </span>
-          </div>
+          {renderAd(
+            bannerAd || null,
+            "neo-border neo-shadow bg-[var(--cream)] h-24 mb-8 flex items-center justify-center animate-fade-in-up stagger-1 overflow-hidden"
+          )}
 
           {/* Feed Header */}
           <div className="flex items-center justify-between mb-6 animate-fade-in-up stagger-2">

@@ -45,6 +45,8 @@ export async function GET() {
       { _id: { $in: adIds.map((id) => new ObjectId(id)) } },
       { $inc: { remaningViews: -1 } },
     );
+    console.log(`Fetched ads for user ${session.user.id}:`, ads);
+    console.log(`Views remaining updated for ads:`, adIds);
 
     return NextResponse.json({ ads });
   } catch (error) {
