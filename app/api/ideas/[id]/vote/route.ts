@@ -47,44 +47,42 @@ export async function PUT(
     let updateOperation: Record<string, unknown> = {};
     let creditsOperation: Record<string, unknown> = {};
 
+    const isAuthor = idea.autorId === userId || (idea.autorId && idea.autorId.toString() === userId);
+
     if (voteType === "upvote") {
       if (hasUpvoted) {
-        // Toggle off upvote
         updateOperation = {
           $pull: { upvotes: userId },
           $set: { updatedAt: new Date() },
         };
-        // Removing an upvote should decrement author's credits
-        creditsOperation = { $inc: { credits: -1 } };
+        if (!isAuthor) {
+          creditsOperation = { $inc: { credits: -1 } };
+        }
       } else {
-        // Add upvote (and remove potential downvote)
         updateOperation = {
           $addToSet: { upvotes: userId },
           $pull: { downvotes: userId },
           $set: { updatedAt: new Date() },
         };
-        // Adding an upvote should increase author's credits
-        creditsOperation = { $inc: { credits: 1 } };
+        if (!isAuthor) {
+          creditsOperation = { $inc: { credits: 1 } };
+        }
       }
     } else {
-      // voteType === "downvote"
       if (hasDownvoted) {
-        // Toggle off downvote
         updateOperation = {
           $pull: { downvotes: userId },
           $set: { updatedAt: new Date() },
         };
-        // Removing a downvote should restore author's credits
-        creditsOperation = { $inc: { credits: 1 } };
       } else {
-        // Add downvote (and remove potential upvote)
         updateOperation = {
           $addToSet: { downvotes: userId },
           $pull: { upvotes: userId },
           $set: { updatedAt: new Date() },
         };
-        // Adding a downvote should decrement author's credits
-        creditsOperation = { $inc: { credits: -1 } };
+        if (hasUpvoted && !isAuthor) {
+          creditsOperation = { $inc: { credits: -1 } };
+        }
       }
     }
 
